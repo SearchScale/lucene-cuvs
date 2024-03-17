@@ -6,7 +6,7 @@ This is an integration for [CuVS](https://github.com/rapidsai/cuvs), GPU acceler
 
 As an initial integration, the CuVS library is plugged in as an IndexSearcher. This project has two layers: (1) Java/JNI layer in `lucene` dir, (2) CuVS/C++ layer in `cuda` dir.
 
-By way of a working example, OpenAI's Wikipedia corpus (25k documents) can be indexed, each document having title and content vectors. A provided sample query (query.txt) can be executed after the indexing.
+By way of a working example, OpenAI's Wikipedia corpus (25k documents) can be indexed, each document having a content vector. A provided sample query (query.txt) can be executed after the indexing.
 
 > :warning: This is not production ready yet.
 
