@@ -22,24 +22,16 @@ Set the correct path for Raft in `cuda/CMakeLists.txt` file. Then, proceed to ru
 
 ## Benchmarks
 
-Wikipedia (OpenAI, 1536 dimensions, 25k vectors):
+Wikipedia (768 dimensions, 1M vectors):
 
-|     | CuVS (RTX 4090) | Lucene HNSW (Ryzen 7950X) | Improvement |
-| -------- | ------- | ------------------------- | ------------- |
-| Indexing  | 5.2 seconds    | 26.5 seconds | 5.1x |
-| Searching | 1 millisecond     | 22 milliseconds | 22x |
+|                           | Indexing   | Improvement | Search | Improvement |
+| ------------------------- | ---------- | ----------- | ------ | ----------- |
+| CuVS (RTX 2080 Ti)        | 37.83 sec  |  **26x**    |  2 ms  |   **4x**    |
+| Lucene HNSW (Ryzen 7700X) | 992.37 sec |      -      |  8 ms  |      -      |
 
-Wikipedia (768 dimensions, 750k vectors):
-
-|     | CuVS (RTX 4090) | Lucene HNSW (Ryzen 7950X) | Improvement |
-| -------- | ------- | ------------------------- | ------- |
-| Indexing  | 167.9 seconds    | 804 seconds | 4.8x |
-
-
-> :warning: Switching over the index building algorithm from IVF_PQ to [NN_DESCENT](https://github.com/rapidsai/raft/pull/1748) will likely result in further 8x (or better) speed up. This is work in progress.
 
 ## Next steps
-* Instead of using the IVF_PQ build algorithm of Cagra, switch over to NN_DESCENT, for a further 8x (or better) improvement in indexing speed.
+
 * Instead of extending the IndexSearcher, create a [KnnVectorFormat](https://github.com/apache/lucene/blob/main/lucene/core/src/java/org/apache/lucene/codecs/KnnVectorsFormat.java) and corresponding KnnVectorsWriter and KnnVectorsReader for tighter integration.
 
 ## Contributors

@@ -50,8 +50,10 @@ JNIEXPORT jint JNICALL Java_com_searchscale_lucene_vectorsearch_jni_CuVSIndexJni
   raft::resource::sync_stream(dev_resources, stream);
   std::cout<<"Data copying time (CPU to GPU): "<<(ms()-startTime)<<std::endl;
 
+
   // Build the index
   startTime = ms();
+  index_params.build_algo = raft::neighbors::cagra::graph_build_algo::NN_DESCENT;
   auto ind = raft::neighbors::cagra::build<float, uint32_t>(dev_resources, index_params, raft::make_const_mdspan(dataset.view()));
   std::cout << "Cagra Index building time: " << (ms()-startTime) << std::endl;
 
