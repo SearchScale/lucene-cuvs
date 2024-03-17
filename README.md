@@ -40,7 +40,7 @@ Wikipedia (768 dimensions, 750k vectors):
 
 ## Next steps
 * Instead of using the IVF_PQ build algorithm of Cagra, switch over to NN_DESCENT, for a further 8x (or better) improvement in indexing speed.
-* Instead of extending the IndexSearcher, create a (KnnVectorFormat)[https://github.com/apache/lucene/blob/main/lucene/core/src/java/org/apache/lucene/codecs/KnnVectorsFormat.java] and corresponding KnnVectorsWriter and KnnVectorsReader for tighter integration.
+* Instead of extending the IndexSearcher, create a [KnnVectorFormat](https://github.com/apache/lucene/blob/main/lucene/core/src/java/org/apache/lucene/codecs/KnnVectorsFormat.java) and corresponding KnnVectorsWriter and KnnVectorsReader for tighter integration.
 
 ## Contributors
 
