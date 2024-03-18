@@ -29,7 +29,7 @@ Wikipedia (768 dimensions, 1M vectors):
 |                                | Indexing   | Improvement | Search | Improvement |
 | ------------------------------ | ---------- | ----------- | ------ | ----------- |
 | CuVS (RTX 4090, NN_DESCENT)    | 38.80 sec  |  **25.6x**  |  2 ms  |   **4x**    |
-| CuVS (RTX 2080 Ti, NN_DESCENT) | 46.18 sec  |  **21.5x**  |  3 ms  |   **2.7x**  |
+| CuVS (RTX 2080 Ti, NN_DESCENT) | 47.67 sec  |  **20.8x**  |  3 ms  |   **2.7x**  |
 | Lucene HNSW (Ryzen 7700X, single thread)      | 992.37 sec |       -     |  8 ms  |      -      |
 
 Wikipedia (2048 dimensions, 1M vectors):
