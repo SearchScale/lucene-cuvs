@@ -75,3 +75,4 @@ public class CuVSIndexSearcher extends IndexSearcher {
     return new TopDocs(new TotalHits(N, TotalHits.Relation.EQUAL_TO), scoreDocs);
   }
 }
+
