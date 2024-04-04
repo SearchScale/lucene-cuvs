@@ -33,6 +33,9 @@ project(luceneraft LANGUAGES CXX CUDA)
 rapids_cpm_init()
 include(cmake/thirdparty/get_raft.cmake)
 
+find_package(OpenMP)
+find_package(Threads)
+
 # -------------- compile tasks ----------------- #
 # Build a .so file for use in JNI
 
@@ -41,7 +44,8 @@ include_directories($ENV{JAVA_HOME}/include/linux)
 
 add_library(${PROJECT_NAME} SHARED src/CudaIndexJni.cu)
 set_property(TARGET ${PROJECT_NAME} PROPERTY IMPORTED_LOCATION "~/miniforge3/lib/libraft.so")
-target_link_libraries(${PROJECT_NAME} PRIVATE raft::raft raft::compiled)
+target_link_libraries(${PROJECT_NAME} PRIVATE raft::raft raft::compiled OpenMP::OpenMP_CXX Threads::Threads)
+target_compile_options(${PROJECT_NAME} PRIVATE -Xcompiler=${OpenMP_CXX_FLAGS})
 
 # Build an executable file
 #add_executable(CAGRA_EXAMPLE src/cagra_example.cu)
