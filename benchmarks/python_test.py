@@ -5,13 +5,14 @@ import gzip
 import os
 import torch
 import pylibraft
+from pylibraft.common import DeviceResources
 import ast
 from pylibraft.neighbors import ivf_flat, ivf_pq, cagra
 import csv
 pylibraft.config.set_output_as(lambda device_ndarray: device_ndarray.copy_to_host())
 
 def build_index(rows: int):
-    with open('wikipedia_vector_dump.csv', newline='') as csvfile:
+    with open('../wikipedia_vector_dump.csv', newline='') as csvfile:
         print("Reading data file...")
         spamreader = csv.reader(csvfile, delimiter=',')
         article_embeddings = []
@@ -34,9 +35,11 @@ def build_index(rows: int):
         et = torch.Tensor(article_embeddings)
         print("Reading data file complete")
         params = cagra.IndexParams(build_algo='nn_descent')
+        handle = DeviceResources()
         print(f"building index with {rows} number of rows.")
         start = time.time_ns()
-        cagra_index = cagra.build(params, et.cuda())
+        cagra_index = cagra.build(params, et.cuda(), handle = handle)
+        handle.sync()
         print(f"build index complete. Elapsed time: {(time.time_ns() - start)/1000000} milliseconds")
         return cagra_index
 
@@ -51,6 +54,6 @@ def search_raft_cagra(query, cagra_index, top_k = 5):
 with open("query.txt", "r") as f:
     rq = ast.literal_eval(f.readline())
     query = torch.Tensor(list(rq))
-    cagra_index = build_index(250000)
+    cagra_index = build_index(1000000)
     #search_raft_cagra(query, cagra_index)
 
