@@ -29,32 +29,20 @@ JNIEXPORT jint JNICALL Java_com_searchscale_lucene_vectorsearch_jni_CuVSIndexJni
   rmm::mr::set_current_device_resource(&pool_mr);
 
   // Copy the arrays from JNI to local variables. 
-  // TODO: Instead of copying three times (JNI->array->hostmatrix->devicematrix),
-  // TODO: it might possible to do it once (JNI -> Device) for better efficiency.
   long startTime = ms();
   jsize numDocs = env->GetArrayLength(docIds);
   std::vector<int> docs (numDocs);
   env->GetIntArrayRegion( docIds, 0, numDocs, &docs[0] ); // TODO: This docid to index mapping should be persisted and used during search
   std::vector<float> data(numVectors * dimension);
   env->GetFloatArrayRegion( dataVectors, 0, numVectors * dimension, &data[0] );
-  auto datasetHost = raft::make_host_matrix<float, int64_t>(dev_resources, numVectors, dimension);
-  auto dataset = raft::make_device_matrix<float, int64_t>(dev_resources, numVectors, dimension);
-  int p = 0;
-  for(size_t i = 0; i < numDocs ; i ++) {
-      for(size_t j = 0; j < dimension; ++j) {
-          datasetHost(i, j) = data[p++]; // TODO: Is there a better SIMD friendly way to copy?
-      }
-  }
-  cudaStream_t stream = raft::resource::get_cuda_stream(dev_resources);
-  raft::copy(dataset.data_handle(), datasetHost.data_handle(), datasetHost.size(), stream);
-  raft::resource::sync_stream(dev_resources, stream);
+  auto extents = raft::make_extents<int64_t>(numVectors, dimension);
+  auto dataset =  raft::make_mdspan<float, int64_t>(&data[0], extents);
   std::cout<<"Data copying time (CPU to GPU): "<<(ms()-startTime)<<std::endl;
-
 
   // Build the index
   startTime = ms();
   index_params.build_algo = raft::neighbors::cagra::graph_build_algo::NN_DESCENT;
-  auto ind = raft::neighbors::cagra::build<float, uint32_t>(dev_resources, index_params, raft::make_const_mdspan(dataset.view()));
+  auto ind = raft::neighbors::cagra::build<float, uint32_t>(dev_resources, index_params, raft::make_const_mdspan(dataset));
   std::cout << "Cagra Index building time: " << (ms()-startTime) << std::endl;
 
   // Serialize the index into a file
