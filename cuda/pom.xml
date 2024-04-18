@@ -46,8 +46,15 @@
 			        <environmentVariables>
 			          <key>value</key>
 			        </environmentVariables>
-			        <options></options>
-			      </configuration>
+                                <options>
+				              <option>-DCMAKE_BUILD_TYPE=Release</option>
+				              <option>-DRAFT_NVTX=OFF</option>
+					      <option>-DCMAKE_CUDA_ARCHITECTURES=NATIVE</option>
+					      <option>-DRAFT_COMPILE_LIBRARY=OFF</option>
+					      <option>-DCUDA_STATIC_RUNTIME=OFF</option>
+				 </options>
+
+				</configuration>
 			    </execution>
 			    <execution>
 			      <id>cmake-build</id>
@@ -66,7 +73,7 @@
 			          <key>value</key>
 			        </environmentVariables>
 			        <options>
-			          <option>--build</option>
+					<option>--build</option>
 			        </options>
 			      </configuration>
 			    </execution>

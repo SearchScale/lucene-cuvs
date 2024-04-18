@@ -28,7 +28,7 @@ JNIEXPORT jint JNICALL Java_com_searchscale_lucene_vectorsearch_jni_CuVSIndexJni
   std::cout<<"CUDA devices: "<<rmm::get_num_cuda_devices()<<std::endl;
   rmm::mr::set_current_device_resource(&pool_mr);
 
-  // Copy the arrays from JNI to local variables.
+  // Copy the arrays from JNI to local variables. 
   // TODO: Instead of copying three times (JNI->array->hostmatrix->devicematrix),
   // TODO: it might possible to do it once (JNI -> Device) for better efficiency.
   long startTime = ms();
@@ -58,8 +58,11 @@ JNIEXPORT jint JNICALL Java_com_searchscale_lucene_vectorsearch_jni_CuVSIndexJni
   std::cout << "Cagra Index building time: " << (ms()-startTime) << std::endl;
 
   // Serialize the index into a file
+  startTime = ms();
   raft::neighbors::cagra::serialize(dev_resources, filename, ind);
+  std::cout << "Serializing time: " << (ms()-startTime) << std::endl;
   dindx = raft::neighbors::cagra::deserialize<float, uint32_t>(dev_resources, filename);
+  std::cout << "Serializing+deserialize time: " << (ms()-startTime) << std::endl;
   return numVectors * dimension;
 }
 
