@@ -16,11 +16,17 @@ By way of a working example, OpenAI's Wikipedia corpus (25k documents) can be in
 
 Install RAFT (https://docs.rapids.ai/api/raft/stable/build/#installation)
 
+Download the dataset file [using this link](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip)
+
 Set the correct path for Raft in `cuda/CMakeLists.txt` file. Then, proceed to run the following (Wikipedia OpenAI benchmark):
 
     wget -c https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip
     mvn package
-    java -jar lucene/target/cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+    java -jar lucene/target/cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar <datasetfile> <vector_index_column> <name_of_vector_field> <numDocs> <dimensions> <queryFile>
+
+    # Example
+    java -jar lucene/target/cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar vector_database_wikipedia_articles_embedded.zip 5 content_vector 25000 768 query.txt
+
 
 ## Benchmarks
 
