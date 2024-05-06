@@ -1,0 +1,10 @@
+"""Build file for rmm."""
+
+load("@rules_ll//ll:defs.bzl", "ll_library")
+
+ll_library(
+    name = "rmm",
+    exposed_hdrs = glob(["include/rmm/**/*"]),
+    exposed_angled_includes = ["include"],
+    visibility = ["//visibility:public"],
+)

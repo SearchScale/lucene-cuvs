@@ -1,0 +1,47 @@
+diff --git a/include/cute/numeric/integral_constant.hpp b/include/cute/numeric/integral_constant.hpp
+index 904a6726..b8009d84 100644
+--- a/include/cute/numeric/integral_constant.hpp
++++ b/include/cute/numeric/integral_constant.hpp
+@@ -43,8 +43,8 @@ struct C {
+   using type = C<v>;
+   static constexpr auto value = v;
+   using value_type = decltype(v);
+-  CUTE_HOST_DEVICE constexpr operator   value_type() const noexcept { return value; }
+-  CUTE_HOST_DEVICE constexpr value_type operator()() const noexcept { return value; }
++  constexpr operator   value_type() const noexcept { return value; }
++  constexpr value_type operator()() const noexcept { return value; }
+ };
+ 
+ // Deprecate
+@@ -168,19 +168,19 @@ using _524288 = Int<524288>;
+ 
+ #define CUTE_LEFT_UNARY_OP(OP)                                       \
+   template <auto t>                                                  \
+-  CUTE_HOST_DEVICE constexpr                                         \
++  constexpr                                         \
+   C<(OP t)> operator OP (C<t>) {                                     \
+     return {};                                                       \
+   }
+ #define CUTE_RIGHT_UNARY_OP(OP)                                      \
+   template <auto t>                                                  \
+-  CUTE_HOST_DEVICE constexpr                                         \
++  constexpr                                         \
+   C<(t OP)> operator OP (C<t>) {                                     \
+     return {};                                                       \
+   }
+ #define CUTE_BINARY_OP(OP)                                           \
+   template <auto t, auto u>                                          \
+-  CUTE_HOST_DEVICE constexpr                                         \
++  constexpr                                         \
+   C<(t OP u)> operator OP (C<t>, C<u>) {                             \
+     return {};                                                       \
+   }
+@@ -189,7 +189,7 @@ CUTE_LEFT_UNARY_OP(+);
+ CUTE_LEFT_UNARY_OP(-);
+ CUTE_LEFT_UNARY_OP(~);
+ CUTE_LEFT_UNARY_OP(!);
+-CUTE_LEFT_UNARY_OP(*);
++// CUTE_LEFT_UNARY_OP(*);
+ 
+ CUTE_BINARY_OP( +);
+ CUTE_BINARY_OP( -);

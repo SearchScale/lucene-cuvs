@@ -1,11 +1,11 @@
 package com.searchscale.lucene.vectorsearch;
 
+import com.searchscale.lucene.vectorsearch.jni.CuVSIndexJni;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.lucene.index.FloatVectorValues;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
@@ -17,10 +17,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
 
-import com.searchscale.lucene.vectorsearch.jni.CuVSIndexJni;
-
 public class CuVSIndexSearcher extends IndexSearcher {
-
   private CuVSIndexJni jni = new CuVSIndexJni();
 
   public CuVSIndexSearcher(IndexReader reader) {
@@ -31,7 +28,8 @@ public class CuVSIndexSearcher extends IndexSearcher {
     List<float[]> dataVectors = new ArrayList<float[]>();
     try {
       for (LeafReaderContext leaf : reader.leaves()) {
-        FloatVectorValues vectors = leaf.reader().getFloatVectorValues(LuceneVectorSearchExample.vectorColName);
+        FloatVectorValues vectors =
+            leaf.reader().getFloatVectorValues(LuceneVectorSearchExample.vectorColName);
         DocIdSetIterator disi = FloatVectorValues.all(leaf.reader().maxDoc());
         for (int doc = disi.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = disi.nextDoc()) {
           vectors.advance(doc);
@@ -51,13 +49,13 @@ public class CuVSIndexSearcher extends IndexSearcher {
       }
     }
     int docIdsArr[] = new int[docIds.size()];
-    for (int i = 0; i < docIdsArr.length; i++)
-      docIdsArr[i] = docIds.get(i);
-    System.out.println(
-        "Time taken for copying data from IndexReader to arrays for C++: " + (System.currentTimeMillis() - startTime));
+    for (int i = 0; i < docIdsArr.length; i++) docIdsArr[i] = docIds.get(i);
+    System.out.println("Time taken for copying data from IndexReader to arrays for C++: "
+        + (System.currentTimeMillis() - startTime));
     startTime = System.currentTimeMillis();
     jni.initIndex(docIdsArr, singleDataVector, docIdsArr.length, dataVectors.get(0).length);
-    System.out.println("Time taken for index building: " + (System.currentTimeMillis() - startTime));
+    System.out.println(
+        "Time taken for index building: " + (System.currentTimeMillis() - startTime));
   }
 
   @Override

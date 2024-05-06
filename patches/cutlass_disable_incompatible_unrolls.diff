@@ -1,0 +1,75 @@
+diff --git a/include/cutlass/epilogue/threadblock/epilogue.h b/include/cutlass/epilogue/threadblock/epilogue.h
+index 57c8e210..66dc3364 100644
+--- a/include/cutlass/epilogue/threadblock/epilogue.h
++++ b/include/cutlass/epilogue/threadblock/epilogue.h
+@@ -478,7 +478,7 @@ public:
+     // Iterate over accumulator tile
+     //
+ 
+-    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations : 1)
++//    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations : 1)
+     for (int iter = 0; iter < OutputTileIterator::kIterations; ++iter)
+     {
+       //
+diff --git a/include/cutlass/epilogue/threadblock/epilogue_with_broadcast.h b/include/cutlass/epilogue/threadblock/epilogue_with_broadcast.h
+index 7e6d2a69..d4997cdd 100644
+--- a/include/cutlass/epilogue/threadblock/epilogue_with_broadcast.h
++++ b/include/cutlass/epilogue/threadblock/epilogue_with_broadcast.h
+@@ -565,7 +565,7 @@ private:
+     // 
+ 
+     // CUTLASS_PRAGMA_UNROLL
+-    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations / Base::kFragmentsPerIteration : 1)
++//    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations / Base::kFragmentsPerIteration : 1)
+     for (int iter = 0; iter < OutputTileIterator::kIterations; iter += Base::kFragmentsPerIteration) {
+ 
+       //
+@@ -703,7 +703,7 @@ private:
+     // Iterate over accumulator tile
+     // 
+ 
+-    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations : 1)
++//    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations : 1)
+     for (int iter = 0; iter < OutputTileIterator::kIterations; ++iter) {
+ 
+       //
+@@ -1335,7 +1335,7 @@ private:
+     // 
+ 
+     // CUTLASS_PRAGMA_UNROLL
+-    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations / Base::kFragmentsPerIteration : 1)
++//    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations / Base::kFragmentsPerIteration : 1)
+     for (int iter = 0; iter < OutputTileIterator::kIterations; iter += Base::kFragmentsPerIteration) {
+ 
+       //
+@@ -1470,7 +1470,7 @@ private:
+     // Iterate over accumulator tile
+     // 
+ 
+-    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations : 1)
++//    #pragma unroll(IterationsUnroll ? OutputTileIterator::kIterations : 1)
+     for (int iter = 0; iter < OutputTileIterator::kIterations; ++iter) {
+ 
+       //
+diff --git a/include/cutlass/epilogue/threadblock/epilogue_with_visitor_callbacks.h b/include/cutlass/epilogue/threadblock/epilogue_with_visitor_callbacks.h
+index 259f0729..ef8f90cf 100644
+--- a/include/cutlass/epilogue/threadblock/epilogue_with_visitor_callbacks.h
++++ b/include/cutlass/epilogue/threadblock/epilogue_with_visitor_callbacks.h
+@@ -303,7 +303,7 @@ public:
+       // Pipeline Loop
+       //
+ 
+-      #pragma unroll(IterationsUnroll ? kIterations : 1)
++//      #pragma unroll(IterationsUnroll ? kIterations : 1)
+       for (int iter_idx = 1; iter_idx < kIterations + 1; ++iter_idx) {
+ 
+         __syncthreads();
+@@ -379,7 +379,7 @@ public:
+       }
+     } else {
+ 
+-      #pragma unroll(IterationsUnroll ? kIterations : 1)
++//      #pragma unroll(IterationsUnroll ? kIterations : 1)
+       for (int iter_idx = 0; iter_idx < kIterations; ++iter_idx) {
+ 
+         //

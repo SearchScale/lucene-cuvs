@@ -1,12 +1,12 @@
 package com.searchscale.lucene.vectorsearch;
 
+import com.opencsv.CSVReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.zip.ZipFile;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -36,14 +36,10 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 
-import com.opencsv.CSVReader;
-
 public class LuceneVectorSearchExample {
-
   public static String vectorColName = null;
 
   public static void main(String[] args) throws Exception {
-
     // [0] Parse Args
 
     String datasetFile = args[0];
@@ -62,7 +58,8 @@ public class LuceneVectorSearchExample {
     // [1] Setup the index
     Directory index = new ByteBuffersDirectory();
     Lucene99Codec knnVectorsCodec = getCodec(dims);
-    IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer()).setCodec(knnVectorsCodec);
+    IndexWriterConfig config =
+        new IndexWriterConfig(new StandardAnalyzer()).setCodec(knnVectorsCodec);
 
     // [2] Index
     long startTime = System.currentTimeMillis();
@@ -87,8 +84,10 @@ public class LuceneVectorSearchExample {
         doc.add(new StringField("url", line[1], Field.Store.YES));
         doc.add(new StringField("title", line[2], Field.Store.YES));
         doc.add(new TextField("text", line[3], Field.Store.YES));
-        float[] contentVector = reduceDimensionVector(parseFloatArrayFromStringArray(line[5]), dims);
-        doc.add(new KnnFloatVectorField(vectorColName, contentVector, VectorSimilarityFunction.EUCLIDEAN));
+        float[] contentVector =
+            reduceDimensionVector(parseFloatArrayFromStringArray(line[5]), dims);
+        doc.add(new KnnFloatVectorField(
+            vectorColName, contentVector, VectorSimilarityFunction.EUCLIDEAN));
         doc.add(new StringField("vector_id", line[6], Field.Store.YES));
 
         if (count % 500 == 0)
@@ -102,7 +101,8 @@ public class LuceneVectorSearchExample {
       writer.commit();
     }
 
-    System.out.println("Time taken for index building (end to end): " + (System.currentTimeMillis() - startTime));
+    System.out.println(
+        "Time taken for index building (end to end): " + (System.currentTimeMillis() - startTime));
 
     // [3] Query
     try (IndexReader reader = DirectoryReader.open(index)) {
@@ -112,7 +112,8 @@ public class LuceneVectorSearchExample {
         Query query = new KnnFloatVectorQuery(vectorColName, queryVector, 5);
         startTime = System.currentTimeMillis();
         TopDocs topDocs = searcher.search(query, ((KnnFloatVectorQuery) query).getK());
-        System.out.println("Time taken for searching (end to end): " + (System.currentTimeMillis() - startTime));
+        System.out.println(
+            "Time taken for searching (end to end): " + (System.currentTimeMillis() - startTime));
         ScoreDoc[] hits = topDocs.scoreDocs;
         System.out.println("Found " + hits.length + " hits.");
         for (ScoreDoc hit : hits) {
@@ -141,15 +142,16 @@ public class LuceneVectorSearchExample {
   }
 
   private static float[] parseFloatArrayFromStringArray(String str) {
-    float[] titleVector = ArrayUtils.toPrimitive(
-        Arrays.stream(str.replace("[", "").replace("]", "").split(", ")).map(Float::valueOf).toArray(Float[]::new));
+    float[] titleVector =
+        ArrayUtils.toPrimitive(Arrays.stream(str.replace("[", "").replace("]", "").split(", "))
+                                   .map(Float::valueOf)
+                                   .toArray(Float[] ::new));
     return titleVector;
   }
 
   public static float[] reduceDimensionVector(float[] vector, int dim) {
     float out[] = new float[dim];
-    for (int i = 0; i < dim && i < vector.length; i++)
-      out[i] = vector[i];
+    for (int i = 0; i < dim && i < vector.length; i++) out[i] = vector[i];
     return out;
   }
 

@@ -1,0 +1,10 @@
+"""Build file for spdlog."""
+
+load("@rules_ll//ll:defs.bzl", "ll_library")
+
+ll_library(
+    name = "spdlog",
+    exposed_hdrs = glob(["include/spdlog/**/*"]),
+    exposed_angled_includes = ["include"],
+    visibility = ["//visibility:public"],
+)

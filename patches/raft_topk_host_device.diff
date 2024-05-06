@@ -1,0 +1,13 @@
+diff --git a/cpp/include/raft/neighbors/detail/cagra/topk_for_cagra/topk.h b/cpp/include/raft/neighbors/detail/cagra/topk_for_cagra/topk.h
+index ac1a7460..4df9b51b 100644
+--- a/cpp/include/raft/neighbors/detail/cagra/topk_for_cagra/topk.h
++++ b/cpp/include/raft/neighbors/detail/cagra/topk_for_cagra/topk.h
+@@ -46,7 +46,7 @@ void _cuann_find_topk(uint32_t topK,
+                       cudaStream_t stream = 0);
+ 
+ #ifdef __CUDA_ARCH__
+-#define CUDA_DEVICE_HOST_FUNC __device__
++#define CUDA_DEVICE_HOST_FUNC __host__ __device__
+ #else
+ #define CUDA_DEVICE_HOST_FUNC
+ #endif

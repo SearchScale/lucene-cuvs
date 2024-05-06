@@ -1,0 +1,27 @@
+"""Build file for cccl."""
+
+load("@rules_ll//ll:defs.bzl", "ll_library")
+
+ll_library(
+    name = "libcudacxx",
+    exposed_hdrs = glob(["libcudacxx/include/**/*"]),
+    exposed_angled_includes = [
+        "libcudacxx/include",
+        "libcudacxx/include/cuda/std/detail",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+ll_library(
+    name = "thrust",
+    exposed_hdrs = glob(["thrust/thrust/**/*"]),
+    exposed_angled_includes = ["thrust"],
+    visibility = ["//visibility:public"],
+)
+
+ll_library(
+    name = "cub",
+    exposed_hdrs = glob(["cub/cub/**/*"]),
+    exposed_angled_includes = ["cub"],
+    visibility = ["//visibility:public"],
+)

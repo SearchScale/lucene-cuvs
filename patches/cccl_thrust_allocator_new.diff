@@ -1,0 +1,52 @@
+diff --git a/thrust/thrust/detail/allocator/allocator_traits.inl b/thrust/thrust/detail/allocator/allocator_traits.inl
+index a9cf627a5..6d3388e46 100644
+--- a/thrust/thrust/detail/allocator/allocator_traits.inl
++++ b/thrust/thrust/detail/allocator/allocator_traits.inl
+@@ -31,8 +31,6 @@
+ #include <thrust/detail/type_deduction.h>
+ #include <thrust/detail/type_traits/is_call_possible.h>
+ 
+-#include <new>
+-
+ THRUST_NAMESPACE_BEGIN
+ namespace detail
+ {
+@@ -172,7 +170,12 @@ _CCCL_EXEC_CHECK_DISABLE
+ template <typename Alloc, typename T>
+ inline _CCCL_HOST_DEVICE typename disable_if<has_member_construct1<Alloc, T>::value>::type construct(Alloc&, T* p)
+ {
++#  if defined(__CUDA__) && defined(__clang__)
++  // XXX unsafe. cuda-clang is seemingly unable to call ::new in device code
++  *p = T();
++#  else
+   ::new (static_cast<void*>(p)) T();
++#  endif
+ }
+ 
+ __THRUST_DEFINE_IS_CALL_POSSIBLE(has_member_construct2_impl, construct)
+@@ -194,7 +197,12 @@ template <typename Alloc, typename T, typename Arg1>
+ inline _CCCL_HOST_DEVICE typename disable_if<has_member_construct2<Alloc, T, Arg1>::value>::type
+ construct(Alloc&, T* p, const Arg1& arg1)
+ {
++# if defined(__CUDA__) && defined(__clang__)
++  // XXX unsafe. cuda-clang is seemingly unable to call ::new in device code
++  *p = T(arg1);
++# else
+   ::new (static_cast<void*>(p)) T(arg1);
++# endif
+ }
+ 
+ __THRUST_DEFINE_IS_CALL_POSSIBLE(has_member_constructN_impl, construct)
+@@ -216,7 +224,12 @@ template <typename Alloc, typename T, typename... Args>
+ inline _CCCL_HOST_DEVICE typename disable_if<has_member_constructN<Alloc, T, Args...>::value>::type
+ construct(Alloc&, T* p, Args&&... args)
+ {
++# if defined(__CUDA__) && defined(__clang__)
++  // XXX unsafe. cuda-clang is seemingly unable to call ::new in device code
++  *p = T(THRUST_FWD(args)...);
++# else
+   ::new (static_cast<void*>(p)) T(THRUST_FWD(args)...);
++# endif
+ }
+ 
+ __THRUST_DEFINE_IS_CALL_POSSIBLE(has_member_destroy_impl, destroy)

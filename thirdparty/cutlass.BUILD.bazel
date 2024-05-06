@@ -1,0 +1,17 @@
+"""Build file for cutlass."""
+
+load("@rules_ll//ll:defs.bzl", "ll_library")
+
+ll_library(
+    name = "cutlass",
+    exposed_hdrs = glob(["include/cutlass/**/*"]),
+    exposed_angled_includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+
+ll_library(
+    name = "cute",
+    exposed_hdrs = glob(["include/cute/**/*"]),
+    exposed_angled_includes = ["include"],
+    visibility = ["//visibility:public"],
+)
