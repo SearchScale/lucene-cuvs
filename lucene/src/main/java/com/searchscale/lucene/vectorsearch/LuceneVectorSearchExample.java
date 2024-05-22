@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -45,19 +49,21 @@ public class LuceneVectorSearchExample {
   public static void main(String[] args) throws Exception {
 
     // [0] Parse Args
-
     String datasetFile = args[0];
     int indexOfVector = Integer.valueOf(args[1]);
     vectorColName = args[2];
     int numDocs = Integer.valueOf(args[3]);
     int dims = Integer.valueOf(args[4]);
     String queryFile = args[5];
+    int numThreads = Integer.valueOf(args[6]);
+
     System.out.println("Dataset file used is: " + datasetFile);
     System.out.println("Index of vector field is: " + indexOfVector);
     System.out.println("Name of the vector field is: " + vectorColName);
     System.out.println("Number of documents to be indexed are: " + numDocs);
     System.out.println("Number of dimensions are: " + dims);
     System.out.println("Query file used is: " + queryFile);
+    System.out.println("Number of threads to be used is: " + numThreads);
 
     // [1] Setup the index
     Directory index = new ByteBuffersDirectory();
@@ -66,47 +72,86 @@ public class LuceneVectorSearchExample {
 
     // [2] Index
     long startTime = System.currentTimeMillis();
-    {
-      InputStreamReader isr = null;
-      IndexWriter writer = new IndexWriter(index, config);
-      if (datasetFile.endsWith(".zip")) {
-        ZipFile zip = new ZipFile(datasetFile);
-        isr = new InputStreamReader(zip.getInputStream(zip.entries().nextElement()));
-      } else {
-        isr = new InputStreamReader(new FileInputStream(datasetFile));
-      }
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+    BlockingQueue<String[]> documentQueue = new LinkedBlockingQueue<>();
+    List<Future<?>> futures = new ArrayList<>();
+    IndexWriter writer = new IndexWriter(index, config);
 
-      CSVReader reader = new CSVReader(isr);
-      String[] line;
-      int count = 0;
-      while ((line = reader.readNext()) != null) {
-        if ((count++) == 0)
-          continue; // skip the first line of the file, it is a header
-        Document doc = new Document();
-        doc.add(new StringField("id", "" + (count - 2), Field.Store.YES));
-        doc.add(new StringField("url", line[1], Field.Store.YES));
-        doc.add(new StringField("title", line[2], Field.Store.YES));
-        doc.add(new TextField("text", line[3], Field.Store.YES));
-        float[] contentVector = reduceDimensionVector(parseFloatArrayFromStringArray(line[5]), dims);
-        doc.add(new KnnFloatVectorField(vectorColName, contentVector, VectorSimilarityFunction.EUCLIDEAN));
-        doc.add(new StringField("vector_id", line[6], Field.Store.YES));
-
-        if (count % 500 == 0)
-          writer.commit();
-        if (count % 5000 == 0)
-          System.out.println(count + " docs indexed ...");
-        writer.addDocument(doc);
-        if (count == numDocs)
-          break;
+    // Producer thread
+    futures.add(executorService.submit(() -> {
+      try (InputStreamReader isr = getInputStreamReader(datasetFile);
+           CSVReader reader = new CSVReader(isr)) {
+        String[] line;
+        int count = 0;
+        while ((line = reader.readNext()) != null) {
+          if ((count++) == 0) continue; // Skip header
+          documentQueue.put(line);
+          if (count % 5000 == 0) {
+              System.out.println(count + " docs read ...");
+          }
+        }
+        // Signal end of processing
+        for (int i = 0; i < numThreads; i++) {
+          documentQueue.put(new String[] {"EOF"});
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
-      writer.commit();
+    }));
+
+    // Consumer threads
+    for (int i = 0; i < numThreads; i++) {
+      futures.add(executorService.submit(() -> {
+        try {
+          List<Document> batchDocs = new ArrayList<>();
+          String[] line;
+          while (!(line = documentQueue.take())[0].equals("EOF")) {
+            Document doc = new Document();
+            doc.add(new StringField("id", line[0], Field.Store.YES));
+            doc.add(new StringField("url", line[1], Field.Store.YES));
+            doc.add(new StringField("title", line[2], Field.Store.YES));
+            doc.add(new TextField("text", line[3], Field.Store.YES));
+            float[] contentVector = reduceDimensionVector(parseFloatArrayFromStringArray(line[indexOfVector]), dims);
+            doc.add(new KnnFloatVectorField(vectorColName, contentVector, VectorSimilarityFunction.EUCLIDEAN));
+            doc.add(new StringField("vector_id", line[6], Field.Store.YES));
+
+            batchDocs.add(doc);
+
+            // Commit in batches
+            if (batchDocs.size() >= 500) {
+              synchronized (writer) {
+                writer.addDocuments(batchDocs);
+                writer.commit();
+              }
+              batchDocs.clear();
+            }
+          }
+          // Commit remaining documents
+          if (!batchDocs.isEmpty()) {
+            synchronized (writer) {
+              writer.addDocuments(batchDocs);
+              writer.commit();
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }));
     }
+
+    // Wait for all threads to finish
+    for (Future<?> future : futures) {
+      future.get();
+    }
+
+    executorService.shutdown();
+    writer.close();
 
     System.out.println("Time taken for index building (end to end): " + (System.currentTimeMillis() - startTime));
 
     // [3] Query
     try (IndexReader reader = DirectoryReader.open(index)) {
-      IndexSearcher searcher = new CuVSIndexSearcher(reader);
+      IndexSearcher searcher = new IndexSearcher(reader);
       for (String line : FileUtils.readFileToString(new File(queryFile), "UTF-8").split("\n")) {
         float queryVector[] = reduceDimensionVector(parseFloatArrayFromStringArray(line), dims);
         Query query = new KnnFloatVectorQuery(vectorColName, queryVector, 5);
@@ -122,6 +167,17 @@ public class LuceneVectorSearchExample {
       }
     } catch (Exception e) {
       e.printStackTrace();
+    }
+  }
+
+  private static InputStreamReader getInputStreamReader(String datasetFile) throws IOException {
+    if (datasetFile.endsWith(".zip")) {
+      ZipFile zipFile = new ZipFile(datasetFile);
+      return new InputStreamReader(zipFile.getInputStream(zipFile.entries().nextElement()));
+    } else if (datasetFile.endsWith(".bz2")) {
+      return new InputStreamReader(new BZip2CompressorInputStream(new FileInputStream(datasetFile)));
+    } else {
+      return new InputStreamReader(new FileInputStream(datasetFile));
     }
   }
 
@@ -141,13 +197,14 @@ public class LuceneVectorSearchExample {
   }
 
   private static float[] parseFloatArrayFromStringArray(String str) {
-    float[] titleVector = ArrayUtils.toPrimitive(
-        Arrays.stream(str.replace("[", "").replace("]", "").split(", ")).map(Float::valueOf).toArray(Float[]::new));
-    return titleVector;
+    return ArrayUtils.toPrimitive(
+        Arrays.stream(str.replace("[", "").replace("]", "").split(", "))
+            .map(Float::valueOf)
+            .toArray(Float[]::new));
   }
 
   public static float[] reduceDimensionVector(float[] vector, int dim) {
-    float out[] = new float[dim];
+    float[] out = new float[dim];
     for (int i = 0; i < dim && i < vector.length; i++)
       out[i] = vector[i];
     return out;
