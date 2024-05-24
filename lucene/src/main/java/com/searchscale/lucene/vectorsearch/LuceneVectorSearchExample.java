@@ -85,6 +85,7 @@ public class LuceneVectorSearchExample {
         int count = 0;
         while ((line = reader.readNext()) != null) {
           if ((count++) == 0) continue; // Skip header
+          if (count > numDocs) break;
           documentQueue.put(line);
           if (count % 5000 == 0) {
               System.out.println(count + " docs read ...");
@@ -108,12 +109,10 @@ public class LuceneVectorSearchExample {
           while (!(line = documentQueue.take())[0].equals("EOF")) {
             Document doc = new Document();
             doc.add(new StringField("id", line[0], Field.Store.YES));
-            doc.add(new StringField("url", line[1], Field.Store.YES));
-            doc.add(new StringField("title", line[2], Field.Store.YES));
-            doc.add(new TextField("text", line[3], Field.Store.YES));
-            float[] contentVector = reduceDimensionVector(parseFloatArrayFromStringArray(line[indexOfVector]), dims);
-            doc.add(new KnnFloatVectorField(vectorColName, contentVector, VectorSimilarityFunction.EUCLIDEAN));
-            doc.add(new StringField("vector_id", line[6], Field.Store.YES));
+            doc.add(new StringField("title", line[1], Field.Store.YES));
+            doc.add(new TextField("text", line[2], Field.Store.YES));
+            float[] articleVector = reduceDimensionVector(parseFloatArrayFromStringArray(line[indexOfVector]), dims);
+            doc.add(new KnnFloatVectorField(vectorColName, articleVector, VectorSimilarityFunction.EUCLIDEAN));
 
             batchDocs.add(doc);
 
