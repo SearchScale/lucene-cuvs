@@ -1,0 +1,22 @@
+diff --git a/cub/cub/block/block_load.cuh b/cub/cub/block/block_load.cuh
+index a9067ce86..bce29efdd 100644
+--- a/cub/cub/block/block_load.cuh
++++ b/cub/cub/block/block_load.cuh
+@@ -467,7 +467,7 @@ LoadDirectWarpStriped(int linear_tid, InputIteratorT block_itr, InputT (&items)[
+ #pragma unroll
+   for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+   {
+-    new (&items[ITEM]) InputT(block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)]);
++    items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
+   }
+ }
+ 
+@@ -518,7 +518,7 @@ LoadDirectWarpStriped(int linear_tid, InputIteratorT block_itr, InputT (&items)[
+   {
+     if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < valid_items)
+     {
+-      new (&items[ITEM]) InputT(block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)]);
++      items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
+     }
+   }
+ }

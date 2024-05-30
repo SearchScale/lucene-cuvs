@@ -19,7 +19,6 @@ public class JavaUtils {
   }
 
   public static void loadLibraryFromJar(String path) throws IOException {
-
     if (!path.startsWith("/")) {
       throw new IllegalArgumentException("The path has to be absolute (start with '/').");
     }
@@ -34,7 +33,7 @@ public class JavaUtils {
     if (filename != null) {
       parts = filename.split("\\.", 2);
       prefix = parts[0];
-      suffix = (parts.length > 1) ? "."+parts[parts.length - 1] : null; // Thanks, davs! :-)
+      suffix = (parts.length > 1) ? "." + parts[parts.length - 1] : null; // Thanks, davs! :-)
     }
 
     // Check if the filename is okay
@@ -51,15 +50,11 @@ public class JavaUtils {
 
     boolean tempFileIsPosix = false;
     try {
-      if (FileSystems.getDefault()
-          .supportedFileAttributeViews()
-          .contains("posix")) {
+      if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
         // Assume POSIX compliant file system, can be deleted after loading.
         tempFileIsPosix = true;
       }
-    } catch (FileSystemNotFoundException
-        | ProviderNotFoundException
-        | SecurityException e) {
+    } catch (FileSystemNotFoundException | ProviderNotFoundException | SecurityException e) {
       // Assume non-POSIX, and don't delete until last file descriptor closed.
       e.printStackTrace();
     }

@@ -1,0 +1,15 @@
+diff --git a/cpp/include/raft/distance/detail/distance_ops/l2_exp.cuh b/cpp/include/raft/distance/detail/distance_ops/l2_exp.cuh
+index a218c85a..dbe92d5e 100644
+--- a/cpp/include/raft/distance/detail/distance_ops/l2_exp.cuh
++++ b/cpp/include/raft/distance/detail/distance_ops/l2_exp.cuh
+@@ -42,8 +42,8 @@ template <typename DataT, typename AccT>
+ struct l2_exp_cutlass_op {
+   bool sqrt;
+ 
+-  __device__ l2_exp_cutlass_op() noexcept : sqrt(false) {}
+-  __device__ l2_exp_cutlass_op(bool isSqrt) noexcept : sqrt(isSqrt) {}
++  __host__ __device__ l2_exp_cutlass_op() noexcept : sqrt(false) {}
++  __host__ __device__ l2_exp_cutlass_op(bool isSqrt) noexcept : sqrt(isSqrt) {}
+   inline __device__ AccT operator()(DataT aNorm, DataT bNorm, DataT accVal) const noexcept
+   {
+     AccT outVal = aNorm + bNorm - DataT(2.0) * accVal;

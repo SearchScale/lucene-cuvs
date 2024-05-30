@@ -1,0 +1,62 @@
+diff --git a/cpp/include/raft/matrix/detail/select_warpsort.cuh b/cpp/include/raft/matrix/detail/select_warpsort.cuh
+index 7da65929..e3862a6c 100644
+--- a/cpp/include/raft/matrix/detail/select_warpsort.cuh
++++ b/cpp/include/raft/matrix/detail/select_warpsort.cuh
+@@ -340,7 +340,7 @@ class warp_sort_filtered : public warp_sort<Capacity, Ascending, T, IdxT> {
+   _RAFT_DEVICE _RAFT_FORCEINLINE void merge_buf_()
+   {
+     util::bitonic<kMaxBufLen>(!Ascending, kWarpWidth).sort(val_buf_, idx_buf_);
+-    this->merge_in<kMaxBufLen>(val_buf_, idx_buf_);
++    this->template merge_in<kMaxBufLen>(val_buf_, idx_buf_);
+     buf_len_ = 0;
+     set_k_th_();  // contains warp sync
+ #pragma unroll
+@@ -465,7 +465,7 @@ class warp_sort_distributed : public warp_sort<Capacity, Ascending, T, IdxT> {
+   _RAFT_DEVICE _RAFT_FORCEINLINE void merge_buf_()
+   {
+     util::bitonic<1>(!Ascending, kWarpWidth).sort(buf_val_, buf_idx_);
+-    this->merge_in<1>(&buf_val_, &buf_idx_);
++    this->template merge_in<1>(&buf_val_, &buf_idx_);
+     set_k_th_();  // contains warp sync
+     buf_val_ = kDummy;
+   }
+@@ -577,7 +577,7 @@ class warp_sort_distributed_ext : public warp_sort<Capacity, Ascending, T, IdxT>
+     IdxT buf_idx       = idx_buf_[laneId()];
+     val_buf_[laneId()] = kDummy;
+     util::bitonic<1>(!Ascending, kWarpWidth).sort(buf_val, buf_idx);
+-    this->merge_in<1>(&buf_val, &buf_idx);
++    this->template merge_in<1>(&buf_val, &buf_idx);
+     set_k_th_();  // contains warp sync
+   }
+ 
+@@ -636,7 +636,7 @@ class warp_sort_immediate : public warp_sort<Capacity, Ascending, T, IdxT> {
+     ++buf_len_;
+     if (buf_len_ == kMaxArrLen) {
+       util::bitonic<kMaxArrLen>(!Ascending, kWarpWidth).sort(val_buf_, idx_buf_);
+-      this->merge_in<kMaxArrLen>(val_buf_, idx_buf_);
++      this->template merge_in<kMaxArrLen>(val_buf_, idx_buf_);
+ #pragma unroll
+       for (int i = 0; i < kMaxArrLen; i++) {
+         val_buf_[i] = kDummy;
+@@ -649,7 +649,7 @@ class warp_sort_immediate : public warp_sort<Capacity, Ascending, T, IdxT> {
+   {
+     if (buf_len_ != 0) {
+       util::bitonic<kMaxArrLen>(!Ascending, kWarpWidth).sort(val_buf_, idx_buf_);
+-      this->merge_in<kMaxArrLen>(val_buf_, idx_buf_);
++      this->template merge_in<kMaxArrLen>(val_buf_, idx_buf_);
+     }
+   }
+ 
+diff --git a/cpp/include/raft/neighbors/detail/cagra/search_multi_cta.cuh b/cpp/include/raft/neighbors/detail/cagra/search_multi_cta.cuh
+index 4b979bca..591fae29 100644
+--- a/cpp/include/raft/neighbors/detail/cagra/search_multi_cta.cuh
++++ b/cpp/include/raft/neighbors/detail/cagra/search_multi_cta.cuh
+@@ -212,7 +212,7 @@ struct search : public search_plan_impl<DATASET_DESCRIPTOR_T, SAMPLE_FILTER_T> {
+     const typename DATASET_DESCRIPTOR_T::INDEX_T* dev_seed_ptr,  // [num_queries, num_seeds]
+     uint32_t* const num_executed_iterations,                     // [num_queries,]
+     uint32_t topk,
+-    SAMPLE_FILTER_T sample_filter)
++    SAMPLE_FILTER_T sample_filter) override
+   {
+     cudaStream_t stream = resource::get_cuda_stream(res);
+ 

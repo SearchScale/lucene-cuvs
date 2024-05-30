@@ -1,0 +1,22 @@
+diff --git a/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh b/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh
+index bd03409f..4fe12716 100644
+--- a/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh
++++ b/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh
+@@ -116,7 +116,7 @@ __device__ void run_on_vector(
+     // read the chunk
+     code_chunk = *reinterpret_cast<const pq_vec_t*>(&in_list_data(group_ix, i, ingroup_ix, 0));
+     // read the codes, one/pq_dim at a time
+-#pragma unroll
++// #pragma unroll
+     for (uint32_t k = 0; k < kChunkSize && j < pq_dim; k++, j++) {
+       // read a piece of the reconstructed vector
+       action(code_view[k], out_ix, j);
+@@ -160,7 +160,7 @@ __device__ void write_vector(
+     // clear the chunk
+     if (lane_id == 0) { code_chunk = pq_vec_t{}; }
+     // write the codes, one/pq_dim at a time
+-#pragma unroll
++// #pragma unroll
+     for (uint32_t k = 0; k < kChunkSize && j < pq_dim; k++, j++) {
+       // write a single code
+       uint8_t code = action(in_ix, j);

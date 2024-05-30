@@ -1,0 +1,54 @@
+# Don't inherit PATH and LD_LIBRARY_PATH.
+build --incompatible_strict_action_env
+
+# Use a prebuilt JDK instead of relying on the host's java runtime.
+common --java_runtime_version=remotejdk_21
+common --tool_java_runtime_version=remotejdk_21
+
+# TODO(aaronmondal): Remove after https://github.com/bazelbuild/bazel/pull/22001
+build --noincompatible_sandbox_hermetic_tmp
+
+# Enforce C++20 as the default for rules_cc, regardless of toolchain config.
+build --cxxopt=-std=c++20 --host_cxxopt=-std=c++20
+
+# Since expect rules_cc targets to be mainly exec_tools, use O3.
+build --cxxopt=-O3 --host_cxxopt=-O3
+
+# Forbid network access unless explicitly enabled.
+build --sandbox_default_allow_network=false
+
+# Use correct runfile locations.
+build --nolegacy_external_runfiles
+
+# Enable sandboxing for exclusive tests like GPU performance tests.
+test --incompatible_exclusive_test_sandboxed
+
+# Make sure rules_cc uses the correct transition mechanism.
+build --incompatible_enable_cc_toolchain_resolution
+
+# Propagate tags such as no-remote for precompilations to downstream actions.
+common --incompatible_allow_tags_propagation
+
+# Bzlmod configuration.
+common --enable_bzlmod
+common --registry=https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/main/
+common --registry=https://raw.githubusercontent.com/eomii/bazel-eomii-registry/main/
+
+# Remote optimizations.
+build --remote_build_event_upload=minimal
+build --remote_download_minimal
+build --nolegacy_important_outputs
+
+# Smaller profiling. Careful. Disabling this might explode remote cache usage.
+build --slim_profile
+build --experimental_profile_include_target_label
+build --noexperimental_profile_include_primary_output
+
+# Nix-generated action env for rules_ll.
+try-import %workspace%/.bazelrc.ll
+
+# Nix-generated flags for LRE.
+try-import %workspace%/.bazelrc.lre
+
+# Allow user-side customization.
+try-import %workspace%/.bazelrc.user

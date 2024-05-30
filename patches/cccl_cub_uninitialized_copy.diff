@@ -1,0 +1,17 @@
+diff --git a/cub/cub/detail/uninitialized_copy.cuh b/cub/cub/detail/uninitialized_copy.cuh
+index 107c82798..3d2f868a5 100644
+--- a/cub/cub/detail/uninitialized_copy.cuh
++++ b/cub/cub/detail/uninitialized_copy.cuh
+@@ -66,7 +66,12 @@ template <typename T,
+           typename ::cuda::std::enable_if<!::cuda::std::is_trivially_copyable<T>::value, int>::type = 0>
+ _CCCL_HOST_DEVICE void uninitialized_copy(T* ptr, U&& val)
+ {
++# if defined(__CUDA__) && defined(__clang__)
++  // XXX unsafe. cuda-clang is seemingly unable to call ::new in device code
++  *ptr = ::cuda::std::forward<U>(val);
++# else
+   new (ptr) T(::cuda::std::forward<U>(val));
++# endif
+ }
+ #endif
+ 

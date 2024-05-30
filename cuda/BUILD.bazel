@@ -1,0 +1,78 @@
+load("@bazel_skylib//rules:copy_directory.bzl", "copy_directory")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load(
+    "@lucene-cuvs//thirdparty:global_defs.bzl",
+    "LUCENE_CUVS_GLOBAL_COMPILE_FLAGS",
+    "LUCENE_CUVS_GLOBAL_DEFINES",
+    "LUCENE_CUVS_OFFLOAD_SM89",
+)
+load("@rules_ll//ll:defs.bzl", "ll_library")
+
+copy_directory(
+    name = "interfaces",
+    src = "@lucene-cuvs//lucene:CuVSIndexJni_hdrs",
+    out = "interfaces",
+)
+
+copy_file(
+    name = "jni_h",
+    src = "@rules_jni//jni/private:jni_h",
+    out = "jni/jni.h",
+)
+
+copy_file(
+    name = "jni_unix_h",
+    src = "@rules_jni//jni/private/unix:jni_md_h",
+    out = "jni_unix/jni_md.h",
+)
+
+ll_library(
+    name = "cuda",
+    srcs = ["src/CudaIndexJni.cu"],
+    hdrs = [
+        ":interfaces",
+        ":jni_h",
+        ":jni_unix_h",
+    ],
+    angled_includes = [
+        "$(GENERATED)cuda/jni",
+    ],
+    compilation_mode = "cuda_nvptx_nvcc",
+    compile_flags = LUCENE_CUVS_GLOBAL_COMPILE_FLAGS + LUCENE_CUVS_OFFLOAD_SM89,
+    defines = LUCENE_CUVS_GLOBAL_DEFINES,
+    emit = ["shared_object"],
+    experimental_device_intrinsics = select({
+        "@rules_ll//ll:cuda_nvptx": [
+            # Only required when setting `compilation_mode` to `cuda_nvptx`.
+            "@raft//:cpp/scripts/__clang_cuda_additional_intrinsics.h",
+        ],
+        "//conditions:default": [],
+    }),
+    includes = [
+        # The outputs from `copy_directory` and `copy_file`.
+        "$(GENERATED)cuda/interfaces",
+        "$(GENERATED)cuda/jni_unix",
+    ],
+    shared_object_link_flags = [
+        "--no-undefined",
+        "-lculibos",
+        "-lcublas_static",
+        "-lcublasLt_static",
+        "-lcusolver_static",
+    ],
+    version_script = "versionscript.txt",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@cccl//:cub",
+        "@cccl//:libcudacxx",
+        "@cccl//:thrust",
+        "@cutlass",
+        "@cutlass//:cute",
+        "@cuvs",
+        "@fmt",
+        "@llvm-project//openmp",
+        "@raft",
+        "@rmm",
+        "@spdlog",
+    ],
+)

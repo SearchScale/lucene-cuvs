@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+load("@rules_jni//jni:defs.bzl", "jni_headers")
+
+java_binary(
+    name = "LuceneVectorSearchExample",
+    srcs = glob(["src/main/java/**/*.java"]),
+    jvm_flags = [
+        "--add-modules=jdk.incubator.vector",
+    ],
+    deps = [
+        "@maven//:com_github_fommil_jniloader",
+        "@maven//:com_opencsv_opencsv",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_lucene_lucene_core",
+        "@rules_jni//jni/tools/native_loader",
+    ],
+)
+
+jni_headers(
+    name = "CuVSIndexJni_hdrs",
+    lib = ":LuceneVectorSearchExample",
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "lucene",
+    srcs = ["demo.sh"],
+    data = [
+        "query.txt",
+        ":LuceneVectorSearchExample",
+        "@dataset//file",
+        "@lucene-cuvs//cuda",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)

@@ -1,0 +1,10 @@
+"""Build file for fmt."""
+
+load("@rules_ll//ll:defs.bzl", "ll_library")
+
+ll_library(
+    name = "fmt",
+    exposed_hdrs = glob(["include/fmt/*.h"]),
+    exposed_angled_includes = ["include"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,134 @@
+module(
+    name = "lucene-cuvs",
+    version = "0.0.0",
+    compatibility_level = 0,
+)
+
+# Platform support. A base requirement for everything else.
+#
+# See: https://github.com/bazelbuild/platforms
+bazel_dep(name = "platforms", version = "0.0.10")
+
+# C++ rules. Don't use Bazel's legacy builtin rules.
+#
+# See: https://github.com/bazelbuild/rules_cc
+bazel_dep(name = "rules_cc", version = "0.0.9")
+
+# Basic starlark extensions. Always good to have available.
+#
+# See: https://github.com/bazelbuild/bazel-skylib
+bazel_dep(name = "bazel_skylib", version = "1.6.1")
+
+# Java rules. Don't use Bazel's legacy builtin rules.
+#
+# See: https://bazel.build/reference/be/java for the rules,
+#      https://github.com/bazelbuild/rules_java for the repository.
+bazel_dep(name = "rules_java", version = "7.5.0")
+
+# Bug-fix to prevent an annoying debug message because of duplicate maven repos.
+#
+# TODO(aaronmondal): Remove this after:
+#                    https://github.com/bazelbuild/rules_jvm_external/issues/916
+bazel_dep(name = "protobuf", version = "26.0.bcr.1")
+
+# Java dependencies.
+#
+# Run `bazel query "@maven//..."` to print available targets.
+#
+# See: https://github.com/bazelbuild/rules_jvm_external/blob/master/docs/bzlmod.md
+bazel_dep(name = "rules_jvm_external", version = "6.1")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    artifacts = [
+        "org.apache.lucene:lucene-core:9.9.0",
+        "org.apache.lucene:lucene-codecs:9.9.0",
+        "com.opencsv:opencsv:5.3",
+        "commons-io:commons-io:2.15.1",
+        "com.github.fommil:jniloader:1.1",
+    ],
+    lock_file = "//:maven_install.json",
+)
+use_repo(maven, "maven", "unpinned_maven")
+
+# JNI rules for C++/Java FFIs.
+#
+# We apply some visibility patching to directly access the jni headers.
+#
+# See: https://github.com/fmeum/rules_jni
+bazel_dep(name = "rules_jni", version = "0.9.1")
+git_override(
+    module_name = "rules_jni",
+    commit = "7cb9c69d4d1f9ca2fae93d21d9c3498a9d0657a0",
+    patch_strip = 1,
+    patches = ["//patches:rules_jni_public_headers.diff"],
+    remote = "https://github.com/fmeum/rules_jni",
+)
+
+# The Clang/LLVM toolchain and rules for CUDA compilation.
+#
+# See: https://github.com/eomii/rules_ll
+bazel_dep(name = "rules_ll", version = "0")
+git_override(
+    module_name = "rules_ll",
+    # Note: Keep this commit in sync with the one in flake.nix.
+    commit = "3ee809512cfb605a00fe5eb938eab0e4f8705204",
+    remote = "https://github.com/eomii/rules_ll",
+)
+
+# We need explicit access to the `@llvm-project` workspace for OpenMP. The
+# `llvm_project_overlay` extension aggregates patches across all modules. This
+# means that rules_ll's patches remain implicitly applied and caches are
+# identical with any other project using rules_ll at the same commit.
+#
+# Don't mix this module up with the `llvm-project` module in the
+# `bazel-central-registry`. The module we're using here is from the
+# `bazel-eomii-registry`. Upstreaming the patch aggregation logic or finding
+# a different solution is still a work in progress at
+# https://github.com/llvm/llvm-project/pull/88927.
+#
+# See: https://github.com/eomii/bazel-eomii-registry/tree/main/modules/llvm-project-overlay
+bazel_dep(name = "llvm-project-overlay", version = "17-init-bcr.3")
+
+llvm_project_overlay = use_extension(
+    "@llvm-project-overlay//utils/bazel:extensions.bzl",
+    "llvm_project_overlay",
+)
+use_repo(
+    llvm_project_overlay,
+    "llvm-project",
+)
+
+# The demo dataset. Available via the `@dataset//file` Bazel target.
+#
+# See: https://bazel.build/rules/lib/repo/http#http_file
+http_file = use_repo_rule(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_file",
+)
+
+http_file(
+    name = "dataset",
+    downloaded_file_path = "dataset.zip",  # Must have a `.zip` extension.
+    integrity = "sha256-gHb64BruF4r2U+dxbdKoz1yJqHIOXzQxyrtb0va32L4=",
+    url = "https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip",
+)
+
+# External dependencies. See the `thirdparty` directory for build files.
+#
+# See: https://bazel.build/external/extension
+lucene_cuvs_deps = use_extension(
+    "@lucene-cuvs//:extensions.bzl",
+    "lucene_cuvs_dependencies",
+)
+use_repo(
+    lucene_cuvs_deps,
+    "cccl",  # https://github.com/NVIDIA/cccl
+    "cutlass",  # https://github.com/NVIDIA/cutlass
+    "cuvs",  # https://github.com/rapidsai/cuvs
+    "fmt",  # https://github.com/fmtlib/fmt
+    "local-remote-execution",  # https://github.com/TraceMachina/nativelink/tree/main/local-remote-execution
+    "raft",  # https://github.com/rapidsai/raft
+    "rmm",  # https://github.com/rapidsai/rmm
+    "spdlog",  # https://github.com/gabime/spdlog
+)

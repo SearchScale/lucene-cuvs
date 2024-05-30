@@ -1,0 +1,230 @@
+diff --git a/cpp/include/raft/neighbors/detail/ivf_pq_build.cuh b/cpp/include/raft/neighbors/detail/ivf_pq_build.cuh
+index 24574642..397da8fd 100644
+--- a/cpp/include/raft/neighbors/detail/ivf_pq_build.cuh
++++ b/cpp/include/raft/neighbors/detail/ivf_pq_build.cuh
+@@ -56,7 +56,7 @@
+ #include <thrust/scan.h>
+ 
+ #include <memory>
+-#include <variant>
++#include <cuda/std/variant>
+ 
+ namespace raft::neighbors::ivf_pq::detail {
+ 
+@@ -225,7 +225,7 @@ void flat_compute_residuals(
+   device_matrix_view<const float, uint32_t, row_major> rotation_matrix,  // [rot_dim, dim]
+   device_matrix_view<const float, uint32_t, row_major> centers,          // [n_lists, dim_ext]
+   const T* dataset,                                                      // [n_rows, dim]
+-  std::variant<uint32_t, const uint32_t*> labels,                        // [n_rows]
++  cuda::std::variant<uint32_t, const uint32_t*> labels,                        // [n_rows]
+   rmm::device_async_resource_ref device_memory)
+ {
+   auto stream  = resource::get_cuda_stream(handle);
+@@ -236,9 +236,9 @@ void flat_compute_residuals(
+   linalg::map_offset(handle, tmp_view, [centers, dataset, labels, dim] __device__(size_t i) {
+     auto row_ix = i / dim;
+     auto el_ix  = i % dim;
+-    auto label  = std::holds_alternative<uint32_t>(labels)
+-                    ? std::get<uint32_t>(labels)
+-                    : std::get<const uint32_t*>(labels)[row_ix];
++    auto label  = cuda::std::holds_alternative<uint32_t>(labels)
++                    ? cuda::std::get<uint32_t>(labels)
++                    : cuda::std::get<const uint32_t*>(labels)[row_ix];
+     return utils::mapping<float>{}(dataset[i]) - centers(label, el_ix);
+   });
+ 
+@@ -609,7 +609,7 @@ template <uint32_t BlockSize, uint32_t PqBits>
+ __launch_bounds__(BlockSize) RAFT_KERNEL unpack_list_data_kernel(
+   device_matrix_view<uint8_t, uint32_t, row_major> out_codes,
+   device_mdspan<const uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> in_list_data,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices)
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   const uint32_t pq_dim = out_codes.extent(1);
+   auto unpack_action    = unpack_codes{out_codes};
+@@ -628,7 +628,7 @@ __launch_bounds__(BlockSize) RAFT_KERNEL unpack_list_data_kernel(
+ inline void unpack_list_data(
+   device_matrix_view<uint8_t, uint32_t, row_major> codes,
+   device_mdspan<const uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> list_data,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices,
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices,
+   uint32_t pq_bits,
+   rmm::cuda_stream_view stream)
+ {
+@@ -658,7 +658,7 @@ void unpack_list_data(raft::resources const& res,
+                       const index<IdxT>& index,
+                       device_matrix_view<uint8_t, uint32_t, row_major> out_codes,
+                       uint32_t label,
+-                      std::variant<uint32_t, const uint32_t*> offset_or_indices)
++                      cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   unpack_list_data(out_codes,
+                    index.lists()[label]->data.view(),
+@@ -700,7 +700,7 @@ __launch_bounds__(BlockSize) RAFT_KERNEL unpack_contiguous_list_data_kernel(
+   device_mdspan<const uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> in_list_data,
+   uint32_t n_rows,
+   uint32_t pq_dim,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices)
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   run_on_list<PqBits>(
+     in_list_data, offset_or_indices, n_rows, pq_dim, unpack_contiguous<PqBits>(out_codes, pq_dim));
+@@ -720,7 +720,7 @@ inline void unpack_contiguous_list_data(
+   device_mdspan<const uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> list_data,
+   uint32_t n_rows,
+   uint32_t pq_dim,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices,
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices,
+   uint32_t pq_bits,
+   rmm::cuda_stream_view stream)
+ {
+@@ -750,7 +750,7 @@ void unpack_contiguous_list_data(raft::resources const& res,
+                                  uint8_t* out_codes,
+                                  uint32_t n_rows,
+                                  uint32_t label,
+-                                 std::variant<uint32_t, const uint32_t*> offset_or_indices)
++                                 cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   unpack_contiguous_list_data(out_codes,
+                               index.lists()[label]->data.view(),
+@@ -825,7 +825,7 @@ __launch_bounds__(BlockSize) RAFT_KERNEL reconstruct_list_data_kernel(
+   device_matrix_view<const float, uint32_t, row_major> centers_rot,
+   codebook_gen codebook_kind,
+   uint32_t cluster_ix,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices)
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   const uint32_t pq_dim = out_vectors.extent(1) / pq_centers.extent(1);
+   auto reconstruct_action =
+@@ -840,13 +840,13 @@ void reconstruct_list_data(raft::resources const& res,
+                            const index<IdxT>& index,
+                            device_matrix_view<T, uint32_t, row_major> out_vectors,
+                            uint32_t label,
+-                           std::variant<uint32_t, const uint32_t*> offset_or_indices)
++                           cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   auto n_rows = out_vectors.extent(0);
+   if (n_rows == 0) { return; }
+   auto& list = index.lists()[label];
+-  if (std::holds_alternative<uint32_t>(offset_or_indices)) {
+-    auto n_skip = std::get<uint32_t>(offset_or_indices);
++  if (cuda::std::holds_alternative<uint32_t>(offset_or_indices)) {
++    auto n_skip = cuda::std::get<uint32_t>(offset_or_indices);
+     // sic! I'm using the upper bound `list.size` instead of exact `list_sizes(label)`
+     // to avoid an extra device-host data copy and the stream sync.
+     RAFT_EXPECTS(n_skip + n_rows <= list->size.load(),
+@@ -940,7 +940,7 @@ template <uint32_t BlockSize, uint32_t PqBits>
+ __launch_bounds__(BlockSize) RAFT_KERNEL pack_list_data_kernel(
+   device_mdspan<uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> list_data,
+   device_matrix_view<const uint8_t, uint32_t, row_major> codes,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices)
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   write_list<PqBits, 1>(
+     list_data, offset_or_indices, codes.extent(0), codes.extent(1), pass_codes{codes});
+@@ -960,7 +960,7 @@ __launch_bounds__(BlockSize) RAFT_KERNEL pack_list_data_kernel(
+ inline void pack_list_data(
+   device_mdspan<uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> list_data,
+   device_matrix_view<const uint8_t, uint32_t, row_major> codes,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices,
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices,
+   uint32_t pq_bits,
+   rmm::cuda_stream_view stream)
+ {
+@@ -989,7 +989,7 @@ void pack_list_data(raft::resources const& res,
+                     index<IdxT>* index,
+                     device_matrix_view<const uint8_t, uint32_t, row_major> new_codes,
+                     uint32_t label,
+-                    std::variant<uint32_t, const uint32_t*> offset_or_indices)
++                    cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   pack_list_data(index->lists()[label]->data.view(),
+                  new_codes,
+@@ -1031,7 +1031,7 @@ __launch_bounds__(BlockSize) RAFT_KERNEL pack_contiguous_list_data_kernel(
+   const uint8_t* codes,
+   uint32_t n_rows,
+   uint32_t pq_dim,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices)
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   write_list<PqBits, 1>(
+     list_data, offset_or_indices, n_rows, pq_dim, pack_contiguous<PqBits>(codes, pq_dim));
+@@ -1053,7 +1053,7 @@ inline void pack_contiguous_list_data(
+   const uint8_t* codes,
+   uint32_t n_rows,
+   uint32_t pq_dim,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices,
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices,
+   uint32_t pq_bits,
+   rmm::cuda_stream_view stream)
+ {
+@@ -1082,7 +1082,7 @@ void pack_contiguous_list_data(raft::resources const& res,
+                                const uint8_t* new_codes,
+                                uint32_t n_rows,
+                                uint32_t label,
+-                               std::variant<uint32_t, const uint32_t*> offset_or_indices)
++                               cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   pack_contiguous_list_data(index->lists()[label]->data.view(),
+                             new_codes,
+@@ -1186,7 +1186,7 @@ struct encode_vectors {
+ template <uint32_t BlockSize, uint32_t PqBits, typename IdxT>
+ __launch_bounds__(BlockSize) RAFT_KERNEL process_and_fill_codes_kernel(
+   device_matrix_view<const float, IdxT, row_major> new_vectors,
+-  std::variant<IdxT, const IdxT*> src_offset_or_indices,
++  cuda::std::variant<IdxT, const IdxT*> src_offset_or_indices,
+   const uint32_t* new_labels,
+   device_vector_view<uint32_t, uint32_t, row_major> list_sizes,
+   device_vector_view<IdxT*, uint32_t, row_major> inds_ptrs,
+@@ -1208,10 +1208,10 @@ __launch_bounds__(BlockSize) RAFT_KERNEL process_and_fill_codes_kernel(
+   // write the label  (one record per subwarp)
+   auto pq_indices = inds_ptrs(cluster_ix);
+   if (lane_id == 0) {
+-    if (std::holds_alternative<IdxT>(src_offset_or_indices)) {
+-      pq_indices[out_ix] = std::get<IdxT>(src_offset_or_indices) + row_ix;
++    if (cuda::std::holds_alternative<IdxT>(src_offset_or_indices)) {
++      pq_indices[out_ix] = cuda::std::get<IdxT>(src_offset_or_indices) + row_ix;
+     } else {
+-      pq_indices[out_ix] = std::get<const IdxT*>(src_offset_or_indices)[row_ix];
++      pq_indices[out_ix] = cuda::std::get<const IdxT*>(src_offset_or_indices)[row_ix];
+     }
+   }
+ 
+@@ -1235,7 +1235,7 @@ __launch_bounds__(BlockSize) RAFT_KERNEL encode_list_data_kernel(
+   device_mdspan<const float, extent_3d<uint32_t>, row_major> pq_centers,
+   codebook_gen codebook_kind,
+   uint32_t cluster_ix,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices)
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   constexpr uint32_t kSubWarpSize = std::min<uint32_t>(WarpSize, 1u << PqBits);
+   const uint32_t pq_dim           = new_vectors.extent(1) / pq_centers.extent(1);
+@@ -1250,7 +1250,7 @@ void encode_list_data(raft::resources const& res,
+                       index<IdxT>* index,
+                       device_matrix_view<const T, uint32_t, row_major> new_vectors,
+                       uint32_t label,
+-                      std::variant<uint32_t, const uint32_t*> offset_or_indices)
++                      cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices)
+ {
+   auto n_rows = new_vectors.extent(0);
+   if (n_rows == 0) { return; }
+@@ -1323,7 +1323,7 @@ template <typename T, typename IdxT>
+ void process_and_fill_codes(raft::resources const& handle,
+                             index<IdxT>& index,
+                             const T* new_vectors,
+-                            std::variant<IdxT, const IdxT*> src_offset_or_indices,
++                            cuda::std::variant<IdxT, const IdxT*> src_offset_or_indices,
+                             const uint32_t* new_labels,
+                             IdxT n_rows,
+                             rmm::device_async_resource_ref mr)
+@@ -1652,8 +1652,8 @@ void extend(raft::resources const& handle,
+                            *index,
+                            vec_batch.data(),
+                            new_indices != nullptr
+-                             ? std::variant<IdxT, const IdxT*>(idx_batch.data())
+-                             : std::variant<IdxT, const IdxT*>(IdxT(idx_batch.offset())),
++                             ? cuda::std::variant<IdxT, const IdxT*>(idx_batch.data())
++                             : cuda::std::variant<IdxT, const IdxT*>(IdxT(idx_batch.offset())),
+                            new_data_labels.data() + vec_batch.offset(),
+                            IdxT(vec_batch.size()),
+                            device_memory);

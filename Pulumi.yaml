@@ -1,0 +1,11 @@
+---
+name: nativelink
+org: SearchScale
+runtime: go
+description: NativeLink development cluster for lucene-cuvs.
+organization:
+  pulumi:tags:
+    company: SearchScale
+backend:
+  # Only intended to run locally.
+  url: file://~

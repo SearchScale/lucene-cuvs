@@ -1,0 +1,13 @@
+diff --git a/cpp/include/raft/neighbors/detail/cagra/utils.hpp b/cpp/include/raft/neighbors/detail/cagra/utils.hpp
+index ece95a7c..fdaca2fc 100644
+--- a/cpp/include/raft/neighbors/detail/cagra/utils.hpp
++++ b/cpp/include/raft/neighbors/detail/cagra/utils.hpp
+@@ -65,7 +65,7 @@ inline cudaDataType_t get_cuda_data_type<uint64_t>()
+ }
+ 
+ template <class T>
+-constexpr unsigned size_of();
++_RAFT_HOST_DEVICE constexpr unsigned size_of();
+ template <>
+ _RAFT_HOST_DEVICE constexpr unsigned size_of<std::int8_t>()
+ {

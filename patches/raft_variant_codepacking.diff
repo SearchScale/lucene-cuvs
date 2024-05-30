@@ -1,0 +1,55 @@
+diff --git a/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh b/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh
+index bd03409f..ef46f85d 100644
+--- a/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh
++++ b/cpp/include/raft/neighbors/detail/ivf_pq_codepacking.cuh
+@@ -25,7 +25,7 @@
+ #include <raft/util/pow2_utils.cuh>
+ #include <raft/util/vectorized.cuh>
+ 
+-#include <variant>
++#include <cuda/std/variant>
+ 
+ namespace raft::neighbors::ivf_pq::detail {
+ 
+@@ -177,15 +177,15 @@ __device__ void write_vector(
+ template <uint32_t PqBits, typename Action>
+ __device__ void run_on_list(
+   device_mdspan<const uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> in_list_data,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices,
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices,
+   uint32_t len,
+   uint32_t pq_dim,
+   Action action)
+ {
+   for (uint32_t ix = threadIdx.x + blockDim.x * blockIdx.x; ix < len; ix += blockDim.x) {
+-    const uint32_t src_ix = std::holds_alternative<uint32_t>(offset_or_indices)
+-                              ? std::get<uint32_t>(offset_or_indices) + ix
+-                              : std::get<const uint32_t*>(offset_or_indices)[ix];
++    const uint32_t src_ix = cuda::std::holds_alternative<uint32_t>(offset_or_indices)
++                              ? cuda::std::get<uint32_t>(offset_or_indices) + ix
++                              : cuda::std::get<const uint32_t*>(offset_or_indices)[ix];
+     run_on_vector<PqBits>(in_list_data, src_ix, ix, pq_dim, action);
+   }
+ }
+@@ -194,7 +194,7 @@ __device__ void run_on_list(
+ template <uint32_t PqBits, uint32_t SubWarpSize, typename Action>
+ __device__ void write_list(
+   device_mdspan<uint8_t, list_spec<uint32_t, uint32_t>::list_extents, row_major> out_list_data,
+-  std::variant<uint32_t, const uint32_t*> offset_or_indices,
++  cuda::std::variant<uint32_t, const uint32_t*> offset_or_indices,
+   uint32_t len,
+   uint32_t pq_dim,
+   Action action)
+@@ -203,9 +203,9 @@ __device__ void write_list(
+   uint32_t stride     = subwarp_align::div(blockDim.x);
+   uint32_t ix         = subwarp_align::div(threadIdx.x + blockDim.x * blockIdx.x);
+   for (; ix < len; ix += stride) {
+-    const uint32_t dst_ix = std::holds_alternative<uint32_t>(offset_or_indices)
+-                              ? std::get<uint32_t>(offset_or_indices) + ix
+-                              : std::get<const uint32_t*>(offset_or_indices)[ix];
++    const uint32_t dst_ix = cuda::std::holds_alternative<uint32_t>(offset_or_indices)
++                              ? cuda::std::get<uint32_t>(offset_or_indices) + ix
++                              : cuda::std::get<const uint32_t*>(offset_or_indices)[ix];
+     write_vector<PqBits, SubWarpSize>(out_list_data, dst_ix, ix, pq_dim, action);
+   }
+ }
