@@ -23,11 +23,12 @@ Set the correct path for Raft in `cuda/CMakeLists.txt` file. Then, proceed to ru
     wget -c https://accounts.searchscale.com/questions.vec.txt
     wget -c https://accounts.searchscale.com/questions.raw.txt
 
-    java -jar cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar <dump_file> <vector_column_number> <vector_column_name> <number_of_documents_to_index> <vector_dimension> <query_file> <commit_at_number_of_documents> <topK> <no. of HNSW indexing threads> <no. of cuvs indexing threads> <merge_strategy options: NO_MERGE | TRIVIAL_MERGE | NON_TRIVIAL_MERGE> <queryThreads> <hnswMaxConn> <hnswBeamWidth> <hnswVisitedLimit> <cagraIntermediateGraphDegree> <cagraGraphDegree> <cagraITopK> <cagraSearchWidth>
+    java -jar cuvs-searcher-cuda-0.1.jar <dump_file> <vector_column_number> <vector_column_name> <number_of_documents_to_index> <vector_dimension> <query_file> <commit_at_number_of_documents> <topK> <no. of HNSW indexing threads> <no. of cuvs indexing threads> <merge_strategy options: NO_MERGE | TRIVIAL_MERGE | NON_TRIVIAL_MERGE> <queryThreads> <hnswMaxConn> <hnswBeamWidth> <hnswVisitedLimit> <cagraIntermediateGraphDegree> <cagraGraphDegree> <cagraITopK> <cagraSearchWidth>
 
     Example:
-    java -Xmx32G -jar cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar wikipedia_vector_dump.csv.gz 3 article_vector 12000000 768 query.txt 300000 10 32 32 NO_MERGE 1 16 100 10 128 64 5 1
+    java -Xmx32G -jar cuvs-searcher-cuda-0.1.jar wikipedia_vector_dump.csv.gz 3 article_vector 12000000 768 questions.vec.txt 300000 10 32 32 NO_MERGE 1 16 100 10 128 64 5 1
 
+    (Outputs will be available in benchmarks-results.json and neighbors.csv)
 
 ## Contributors
 
