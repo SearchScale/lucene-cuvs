@@ -16,8 +16,6 @@ By way of a working example, Wikipedia corpus (1.3M documents) can be indexed, e
 
 Install NVIDIA drivers, CUDA 12.3+, Maven 3.9.6+ and JDK 21.
 
-Set the correct path for Raft in `cuda/CMakeLists.txt` file. Then, proceed to run the following (Wikipedia OpenAI benchmark):
-
     # 1.3 Million wikipedia documents with vector embeddings, along with some query embeddings
     wget -c https://accounts.searchscale.com/wikipedia_vector_dump.csv.gz
     wget -c https://accounts.searchscale.com/questions.vec.txt
