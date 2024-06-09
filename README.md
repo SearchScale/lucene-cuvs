@@ -4,55 +4,36 @@ This is an integration for [CuVS](https://github.com/rapidsai/cuvs), GPU acceler
 
 ## Architecture
 
-As an initial integration, the CuVS library is plugged in as an IndexSearcher. This project has two layers: (1) Java/JNI layer in `lucene` dir, (2) CuVS/C++ layer in `cuda` dir.
+As an initial integration, the CuVS library is plugged in as a new KnnVectorFormat via a custom codec.
 
-![Architecture](architecture.png "Lucene CuVS Architecture")
+![Architecture](lucene-cuvs-architecture.png "Lucene CuVS Architecture")
 
-By way of a working example, OpenAI's Wikipedia corpus (25k documents) can be indexed, each document having a content vector. A provided sample query (query.txt) can be executed after the indexing.
+By way of a working example, Wikipedia corpus (1.3M documents) can be indexed, each document having a content vector. Queries (questions.vec.txt) can be executed after the indexing.
 
 > :warning: This is not production ready yet.
 
 ## Running
 
-Install RAFT (https://docs.rapids.ai/api/raft/stable/build/#installation)
-
-Download the dataset file [using this link](https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip)
+Install NVIDIA drivers, CUDA and JDK 21.
 
 Set the correct path for Raft in `cuda/CMakeLists.txt` file. Then, proceed to run the following (Wikipedia OpenAI benchmark):
 
-    wget -c https://cdn.openai.com/API/examples/data/vector_database_wikipedia_articles_embedded.zip
-    mvn package
-    java -jar lucene/target/cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar <datasetfile> <vector_index_column> <name_of_vector_field> <numDocs> <dimensions> <queryFile>
+    # 1.3 Million wikipedia documents with vector embeddings, along with some query embeddings
+    wget -c https://accounts.searchscale.com/wikipedia_vector_dump.csv.gz
+    wget -c https://accounts.searchscale.com/questions.vec.txt
+    wget -c https://accounts.searchscale.com/questions.raw.txt
 
-    # Example
-    java -jar lucene/target/cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar vector_database_wikipedia_articles_embedded.zip 5 content_vector 25000 768 query.txt
+    java -jar cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar <dump_file> <vector_column_number> <vector_column_name> <number_of_documents_to_index> <vector_dimension> <query_file> <commit_at_number_of_documents> <topK> <no. of HNSW indexing threads> <no. of cuvs indexing threads> <merge_strategy options: NO_MERGE | TRIVIAL_MERGE | NON_TRIVIAL_MERGE> <queryThreads> <hnswMaxConn> <hnswBeamWidth> <hnswVisitedLimit> <cagraIntermediateGraphDegree> <cagraGraphDegree> <cagraITopK> <cagraSearchWidth>
 
+    Example:
+    java -Xmx32G -jar cuvs-searcher-lucene-0.0.1-SNAPSHOT-jar-with-dependencies.jar wikipedia_vector_dump.csv.gz 3 article_vector 12000000 768 query.txt 300000 10 32 32 NO_MERGE 1 16 100 10 128 64 5 1
 
-## Benchmarks
-
-Wikipedia (768 dimensions, 1M vectors):
-
-|                                | Indexing   | Improvement | Search | Improvement |
-| ------------------------------ | ---------- | ----------- | ------ | ----------- |
-| CuVS (RTX 4090, NN_DESCENT)    | 38.80 sec  |  **25.6x**  |  2 ms  |   **4x**    |
-| CuVS (RTX 2080 Ti, NN_DESCENT) | 47.67 sec  |  **20.8x**  |  3 ms  |   **2.7x**  |
-| Lucene HNSW (Ryzen 7700X, single thread)      | 992.37 sec |       -     |  8 ms  |      -      |
-
-Wikipedia (2048 dimensions, 1M vectors):
-
-|                                           | Indexing   | Improvement |
-| ----------------------------------------- | ---------- | ----------- |
-| CuVS (RTX 4090, NN_DESCENT)               | 55.84 sec  |  **23.8x**  |
-| Lucene HNSW (Ryzen 7950X, single thread)  | 1329.9 sec |       -     |
-
-
-## Next steps
-
-* Instead of extending the IndexSearcher, create a [KnnVectorFormat](https://github.com/apache/lucene/blob/main/lucene/core/src/java/org/apache/lucene/codecs/KnnVectorsFormat.java) and corresponding KnnVectorsWriter and KnnVectorsReader for tighter integration.
 
 ## Contributors
 
 * Vivek Narang, SearchScale
 * Ishan Chattopadhyaya, SearchScale & Committer, Apache Lucene & Solr
+* Corey Nolet, NVIDIA
+* Puneet Ahuja, SearchScale
 * Kishore Angani, SearchScale
 * Noble Paul, SearchScale & Committer, Apache Lucene & Solr
