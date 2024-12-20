@@ -32,7 +32,6 @@ import com.nvidia.cuvs.CagraIndex;
 import com.nvidia.cuvs.CagraIndexParams;
 import com.nvidia.cuvs.CagraIndexParams.CagraGraphBuildAlgo;
 import com.nvidia.cuvs.CuVSResources;
-import com.searchscale.lucene.vectorsearch.CuVSVectorsReader.SegmentInputStream;
 
 public class CuVSVectorsWriter extends KnnVectorsWriter {
 

@@ -16,7 +16,7 @@ public class CuVSKnnFloatVectorQuery extends KnnFloatVectorQuery {
 
   final private int iTopK;
   final private int searchWidth;
-  
+
   public CuVSKnnFloatVectorQuery(String field, float[] target, int k, int iTopK, int searchWidth) {
     super(field, target, k);
     this.iTopK = iTopK;
@@ -30,15 +30,6 @@ public class CuVSKnnFloatVectorQuery extends KnnFloatVectorQuery {
 
     context.reader().searchNearestVectors(field, this.getTargetCopy(), results, null);
     return results.topDocs();
-  }
-
-    private class ScoreDocComparator implements Comparator<ScoreDoc> {
-
-    @Override
-    public int compare(ScoreDoc sd0, ScoreDoc sd1) {
-      return Float.compare(sd0.score, sd1.score);
-    }
-
   }
 
 }

@@ -15,8 +15,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import com.searchscale.lucene.vectorsearch.CuVSVectorsReader.SegmentInputStream;
-
 public class Util {
 
   public static ByteArrayOutputStream getZipEntryBAOS(String fileName, SegmentInputStream segInputStream)
@@ -39,86 +37,63 @@ public class Util {
 
   public static List<float[]> getMergedVectors(List<SegmentInputStream> segInputStreams, String mergedSegmentName)
       throws IOException {
-
     ZipEntry zs;
     List<float[]> mergedVectors = new ArrayList<float[]>();
-
     for (SegmentInputStream segInputStream : segInputStreams) {
       segInputStream.reset();
       ZipInputStream zipStream = new ZipInputStream(segInputStream);
       while ((zs = zipStream.getNextEntry()) != null) {
-
         byte[] buffer = new byte[1024];
         int length;
-
         if (zs.getName().endsWith(".vec")) {
-
           ByteArrayOutputStream baosM = new ByteArrayOutputStream();
           while ((length = zipStream.read(buffer)) != -1) {
             baosM.write(buffer, 0, length);
           }
-
           List<float[]> m = deSerializeListInMemory(baosM.toByteArray());
           mergedVectors.addAll(m);
-
         }
-
       }
     }
-
     return mergedVectors;
   }
 
   public static void getMergedArchiveCOS(List<SegmentInputStream> segInputStreams, String mergedSegmentName,
       OutputStream os) throws IOException {
-
     ZipOutputStream zos = new ZipOutputStream(os);
     ZipEntry zs;
-
     Map<String, Integer> mergedMetaMap = new LinkedHashMap<String, Integer>();
     for (SegmentInputStream segInputStream : segInputStreams) {
       segInputStream.reset();
       ZipInputStream zipStream = new ZipInputStream(segInputStream);
       while ((zs = zipStream.getNextEntry()) != null) {
-
         byte[] buffer = new byte[1024];
         int length;
-
         if (zs.getName().endsWith(".meta")) {
-
           ByteArrayOutputStream baosM = new ByteArrayOutputStream();
           while ((length = zipStream.read(buffer)) != -1) {
             baosM.write(buffer, 0, length);
           }
-
           Map<String, Integer> m = deSerializeMapInMemory(baosM.toByteArray());
           mergedMetaMap.putAll(m);
-
         } else {
-
           ZipEntry zipEntry = new ZipEntry(zs.getName());
           zos.putNextEntry(zipEntry);
           zos.setLevel(Deflater.NO_COMPRESSION);
-
           while ((length = zipStream.read(buffer)) != -1) {
             zos.write(buffer, 0, length);
           }
           zos.closeEntry();
-
         }
-
       }
     }
-
     // Finally put the merged meta file
     ZipEntry mergedMetaZipEntry = new ZipEntry(mergedSegmentName + ".meta");
     zos.putNextEntry(mergedMetaZipEntry);
     zos.setLevel(Deflater.NO_COMPRESSION);
     new ObjectOutputStream(zos).writeObject(mergedMetaMap); // Java serialization should be avoided
     zos.closeEntry();
-
     zos.close();
-
   }
 
   @SuppressWarnings("unchecked")

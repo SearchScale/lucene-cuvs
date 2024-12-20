@@ -38,93 +38,7 @@ public class CuVSVectorsReader extends KnnVectorsReader {
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  class SegmentInputStream extends InputStream {
-
-    public long initialFilePointerPosition = 0;
-    public long limit = 0;
-    public long pos = 0;
-
-    // TODO: This input stream needs to be modified to enable buffering.
-    public SegmentInputStream(long limit, long initialFilePointerPosition) throws IOException {
-      super();
-      vectorDataReader.seek(initialFilePointerPosition);
-      this.initialFilePointerPosition = initialFilePointerPosition;
-      this.limit = limit;
-    }
-
-    @Override
-    public int read() throws IOException {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int read(byte[] b, int off, int len) {
-      try {
-
-        long avail = limit - pos;
-
-        if (pos >= limit) {
-          return -1;
-        }
-
-        if (len > avail) {
-          len = (int) avail;
-        }
-
-        if (len <= 0) {
-          return 0;
-        }
-
-        vectorDataReader.readBytes(b, off, len);
-
-        pos += len;
-        return len;
-
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      return -1;
-    }
-
-    @Override
-    public int read(byte[] b) throws IOException {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void reset() throws IOException {
-      vectorDataReader.seek(initialFilePointerPosition);
-      pos = 0;
-    }
-
-    @Override
-    public long skip(long n) throws IOException {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean markSupported() {
-      return true;
-    }
-
-    @Override
-    public void mark(int readlimit) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close() {
-      // Do nothing for now.
-    }
-
-    @Override
-    public int available() {
-      throw new UnsupportedOperationException();
-    }
-
-  }
-
-  private IndexInput vectorDataReader = null;
+  IndexInput vectorDataReader = null;
   private IndexInput vectorMetaReader = null;
   public String fileName = null;
   public String metaFileName = null;
@@ -159,7 +73,7 @@ public class CuVSVectorsReader extends KnnVectorsReader {
 
     indexFilePayloadSize = vectorMetaReader.readInt();
     initialFilePointerLoc = vectorDataReader.getFilePointer();
-    segmentInputStream = new SegmentInputStream(indexFilePayloadSize, initialFilePointerLoc);
+    segmentInputStream = new SegmentInputStream(this, indexFilePayloadSize, initialFilePointerLoc);
 
     metaMap = Util.deSerializeMapInMemory(
         Util.getZipEntryBAOS(segmentState.segmentInfo.name + ".meta", segmentInputStream).toByteArray());
